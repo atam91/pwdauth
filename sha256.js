@@ -14,45 +14,41 @@
  * limitations under the License.
  */
 
-define([
-    "lodash/isNil",
-    "lodash/isString",
-    "sjcl",
-    "utf8"
-], function(isNil, isString, sjcl, utf8) {
-    "use strict";
+const isNil = require("lodash/isNil");
+const isString = require("lodash/isString");
+const sjcl = require("sjcl");
+const utf8 = require("utf8");
 
-    function hash(string) {
-        var result = sjcl.hash.sha256.hash(string);
-        result = sjcl.codec.hex.fromBits(result);
-        return result;
-    }
+function hash(string) {
+    var result = sjcl.hash.sha256.hash(string);
+    result = sjcl.codec.hex.fromBits(result);
+    return result;
+}
 
-    function defaultString(str) {
-        if (isString(str)) {
-            return str;
-        } else if (!isNil(str)) {
-            return String(str);
-        } else {
-            return "";
-        }
+function defaultString(str) {
+    if (isString(str)) {
+        return str;
+    } else if (!isNil(str)) {
+        return String(str);
+    } else {
+        return "";
     }
+}
 
 // https://github.com/bitwiseshiftleft/sjcl/issues/225
 //
 // python -c "import hashlib;print hashlib.sha256('foo').hexdigest()"
 // 2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae
-// 
+//
 // python -c "import hashlib;print hashlib.sha256(u'привет'.encode('utf-8')).hexdigest()"
 // 982c11281206e7b972ee4a5fcc85f362acf826314862212213de925079dc5652
-// 
+//
 // python -c "import hashlib;print hashlib.sha256('').hexdigest()"
 // e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
-// 
-    return function(data) {
-        var str = defaultString(data);
-        var bytes = utf8.encode(str);
-        return hash(bytes);
-    };
+//
 
-});
+module.exports = function(data) {
+    var str = defaultString(data);
+    var bytes = utf8.encode(str);
+    return hash(bytes);
+};

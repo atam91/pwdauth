@@ -14,24 +14,22 @@
  * limitations under the License.
  */
 
-define([
-    "lodash/isEmpty",
-    "lodash/isString"
-], function(isEmpty, isString) {
-    "use strict";
+const isEmpty = require("lodash/isEmpty");
+const isString = require("lodash/isString");
 
-    // https://security.stackexchange.com/q/60750/166297
-    return function(a, b) {
-        if (!isString(a) || !isString(b) || isEmpty(a) || isEmpty(b)) {
-            return false;
-        }
-        var mismatch = a.length === b.length ? 0 : 1;
-        if (1 === mismatch) {
-            b = a;
-        }
-        for (var i = 0, il = a.length; i < il; ++i) {
-            mismatch |= (a.charCodeAt(i) ^ b.charCodeAt(i));
-        }
-        return mismatch === 0;
-    };
-});
+// https://security.stackexchange.com/q/60750/166297
+function stringsEqual(a, b) {
+    if (!isString(a) || !isString(b) || isEmpty(a) || isEmpty(b)) {
+        return false;
+    }
+    var mismatch = a.length === b.length ? 0 : 1;
+    if (1 === mismatch) {
+        b = a;
+    }
+    for (var i = 0, il = a.length; i < il; ++i) {
+        mismatch |= (a.charCodeAt(i) ^ b.charCodeAt(i));
+    }
+    return mismatch === 0;
+}
+
+module.exports = stringsEqual;

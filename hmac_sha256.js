@@ -14,53 +14,53 @@
  * limitations under the License.
  */
 
-define([
-    "lodash/isNil",
-    "lodash/isString",
-    "lodash/isArray",
-    "sjcl",
-    "utf8"
-], function(isNil, isString, isArray, sjcl, utf8) {
-    "use strict";
+const isNil = require("lodash/isNil");
+const isString = require("lodash/isString");
+const isArray = require("lodash/isArray");
+const sjcl = require("sjcl");
+const utf8 = require("utf8");
 
-    function hmac(key, string, encoding) {
-        var result = new sjcl.misc.hmac(key).encrypt(string);
-        if (encoding) {
-          result = sjcl.codec.hex.fromBits(result);
-        }
-        return result;
-    }
 
-    function defaultString(str) {
-        if (isString(str)) {
-            return utf8.encode(str);
-        } else if (!isNil(str)) {
-            return utf8.encode(String(str));
-        } else {
-            return utf8.encode("");
-        }
+function hmac(key, string, encoding) {
+    var result = new sjcl.misc.hmac(key).encrypt(string);
+    if (encoding) {
+        result = sjcl.codec.hex.fromBits(result);
     }
-    function defaultKey(key) {
-        if(isArray(key)) {
-            return key;
-        } else {
-            return defaultString(key);
-        }
+    return result;
+}
+
+function defaultString(str) {
+    if (isString(str)) {
+        return utf8.encode(str);
+    } else if (!isNil(str)) {
+        return utf8.encode(String(str));
+    } else {
+        return utf8.encode("");
     }
+}
+function defaultKey(key) {
+    if(isArray(key)) {
+        return key;
+    } else {
+        return defaultString(key);
+    }
+}
+
+
 // https://github.com/bitwiseshiftleft/sjcl/issues/225
 //
 // python -c "import hashlib;print hashlib.sha256('foo').hexdigest()"
 // 2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae
-// 
+//
 // python -c "import hashlib;print hashlib.sha256(u'привет'.encode('utf-8')).hexdigest()"
 // 982c11281206e7b972ee4a5fcc85f362acf826314862212213de925079dc5652
-// 
+//
 // python -c "import hashlib;print hashlib.sha256('').hexdigest()"
 // e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
-// 
-    return function(key, data, encoding) {
-        var str = defaultString(data);
-        var k = defaultKey(key);
-        return hmac(k, str, encoding);
-    };
-});
+//
+
+module.exports = function(key, data, encoding) {
+    var str = defaultString(data);
+    var k = defaultKey(key);
+    return hmac(k, str, encoding);
+};

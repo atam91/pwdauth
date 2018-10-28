@@ -14,84 +14,83 @@
  * limitations under the License.
  */
 
-define([
-    "lodash/isEmpty",
-    "lodash/isFunction",
-    "lodash/isObject",
-    "lodash/isString",
-    "moment",
-    "./authErrors",
-    "./stringsEqual"
-], function(isEmpty, isFunction, isObject, isString, moment, authErrors, stringsEqual) {
-    "use strict";
+const isEmpty = require("lodash/isEmpty");
+const isFunction = require("lodash/isFunction");
+const isObject = require("lodash/isObject");
+const isString = require("lodash/isString");
+const moment = require("moment");
+const authErrors = require("./authErrors");
+const stringsEqual = require("./stringsEqual");
 
-    return function(loadUser, createRequest, createSession, request) {
-        // check callbacks
-        if (!isFunction(loadUser) || !isFunction(createRequest) || !isFunction(createSession)) {
-            return {
-                error: authErrors.INVALID_CALLBACK
-            };
-        }
 
-        // check request well-formed
-        if (!isObject(request) || 
-                !request.hasOwnProperty("key") || !isString(request.key) || isEmpty(request.key) ||
-                !request.hasOwnProperty("hmac") || !isString(request.hmac) || isEmpty(request.hmac) ||
-                !request.hasOwnProperty("timestamp") || !isString(request.timestamp) || isEmpty(request.timestamp) ||
-                !request.hasOwnProperty("path") || !isString(request.path) || isEmpty(request.path) 
-            ){
-                return {
-                    error: authErrors.REQUEST_NOT_WELL_FORMED
-                };
-            }
-
-        // check ISO 8601 date format
-        var reqDate = moment(request.timestamp, moment.ISO_8601, true);
-        if (!reqDate.isValid()) {
-            return {
-                error: authErrors.INVALID_DATE_FORMAT
-            };
-        }
-
-        // load user
-        var user = loadUser(request.key);
-        if (!isObject(user)) {
-            return {
-                error: authErrors.USER_NOT_FOUND
-            };
-        }
-        if (!user.hasOwnProperty("pwdHash") || !isString(user.pwdHash) || isEmpty(user.pwdHash)) {
-            return {
-                error: authErrors.INVALID_USER_LOADED,
-                user: user
-            };
-        }
-
-        // re-create request hash and compare it
-        var localRequest = createRequest(
-            request.path,
-            request.key,
-            user.pwdHash,
-            request.timestamp
-        );
-        if (!stringsEqual(localRequest.hmac, request.hmac)) {
-            return {
-                error: authErrors.INVALID_REQUEST_HASH
-            };
-        }
-
-        // create session
-        var sessionKey = createSession(user, request);
-        if (!isString(sessionKey) || isEmpty(sessionKey)) {
-            return {
-                error: authErrors.INVALID_SESSION_KEY,
-                sessionKey: sessionKey
-            };
-        }
-
-        // return a token
+function authenticate(loadUser, createRequest, createSession, request) {
+    // check callbacks
+    if (!isFunction(loadUser) || !isFunction(createRequest) || !isFunction(createSession)) {
         return {
+            error: authErrors.INVALID_CALLBACK
+        };
+    }
+
+    // check request well-formed
+    if (!isObject(request) ||
+        !request.hasOwnProperty("key") || !isString(request.key) || isEmpty(request.key) ||
+        !request.hasOwnProperty("hmac") || !isString(request.hmac) || isEmpty(request.hmac) ||
+        !request.hasOwnProperty("timestamp") || !isString(request.timestamp) || isEmpty(request.timestamp) ||
+        !request.hasOwnProperty("path") || !isString(request.path) || isEmpty(request.path)
+    ){
+        return {
+            error: authErrors.REQUEST_NOT_WELL_FORMED
+        };
+    }
+
+    // check ISO 8601 date format
+    var reqDate = moment(request.timestamp, moment.ISO_8601, true);
+    if (!reqDate.isValid()) {
+        return {
+            error: authErrors.INVALID_DATE_FORMAT
+        };
+    }
+
+    // load user
+    var user = loadUser(request.key);
+    if (!isObject(user)) {
+        return {
+            error: authErrors.USER_NOT_FOUND
+        };
+    }
+    if (!user.hasOwnProperty("pwdHash") || !isString(user.pwdHash) || isEmpty(user.pwdHash)) {
+        return {
+            error: authErrors.INVALID_USER_LOADED,
+            user: user
+        };
+    }
+
+    // re-create request hash and compare it
+    var localRequest = createRequest(
+        request.path,
+        request.key,
+        user.pwdHash,
+        request.timestamp
+    );
+    if (!stringsEqual(localRequest.hmac, request.hmac)) {
+        return {
+            error: authErrors.INVALID_REQUEST_HASH
+        };
+    }
+
+    // create session
+    var sessionKey = createSession(user, request);
+    if (!isString(sessionKey) || isEmpty(sessionKey)) {
+        return {
+            error: authErrors.INVALID_SESSION_KEY,
             sessionKey: sessionKey
         };
+    }
+
+    // return a token
+    return {
+        sessionKey: sessionKey
     };
-});
+}
+
+module.exports = authenticate;

@@ -14,23 +14,28 @@
  * limitations under the License.
  */
 
-define([
-    "lodash/isEmpty",
-    "lodash/isString",
-    "./sha256"
-], function(isEmpty, isString, hash) {
-    "use strict";
+const isEmpty = require("lodash/isEmpty");
+const isString = require("lodash/isString");
+const hash = require("./sha256");
 
-    return function(pwdClear, userId) {
-        if (!isString(userId) || isEmpty(userId)) {
-            throw new Error("Invalid 'userId' parameter specified");
-        }
-        if (!isString(pwdClear) || isEmpty(pwdClear)) {
-            throw new Error("Invalid 'pwdClear' parameter specified");
-        }
-        // https://security.stackexchange.com/a/39498/166297
-        var salt = hash(userId);
-        var joined = [pwdClear, salt].join("\n");
-        return hash(joined);
-    };
-});
+/**
+ *
+ * @param {string} pwdClear
+ * @param {string} userId
+ * @returns {string}
+ */
+function createPasswordHash(pwdClear, userId) {
+    if (!isString(userId) || isEmpty(userId)) {
+        throw new Error("Invalid 'userId' parameter specified");
+    }
+    if (!isString(pwdClear) || isEmpty(pwdClear)) {
+        throw new Error("Invalid 'pwdClear' parameter specified");
+    }
+    // https://security.stackexchange.com/a/39498/166297
+    var salt = hash(userId);
+    var joined = [pwdClear, salt].join("\n");
+    return hash(joined);
+}
+
+
+module.exports = createPasswordHash;

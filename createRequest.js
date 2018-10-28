@@ -14,73 +14,80 @@
  * limitations under the License.
  */
 
-define([
-    "lodash/isEmpty",
-    "lodash/isString",
-    "./hmac_sha256",
-    "./sha256"
-], function(isEmpty, isString, hmac, hash) {
-    "use strict";
+const isEmpty = require("lodash/isEmpty");
+const isString = require("lodash/isString");
+const hmac = require("./hmac_sha256");
+const hash = require("./sha256");
 
-    var label = "PWDAUTH";
 
-    function signature(path, pwdHash, timestamp) {
-        var kDate = hmac(label + pwdHash, timestamp);
-        var kCredentials = hmac(kDate, label.toLowerCase() + "_request");
-        return hmac(kCredentials, stringToSign(path, timestamp), true);
-    }
+var label = "PWDAUTH";
 
-    function stringToSign(path, timestamp) {
-        return [
-          label+ "-HMAC-SHA256",
-          timestamp,
-          hash(path)
-        ].join("\n");
-    }
-    
-    function canonicalString(path) {
-        if (path !== "/") {
-          path = path.replace(/\/{2,}/g, "/");
-          path = path.split("/").reduce(function(path, piece) {
+function signature(path, pwdHash, timestamp) {
+    var kDate = hmac(label + pwdHash, timestamp);
+    var kCredentials = hmac(kDate, label.toLowerCase() + "_request");
+    return hmac(kCredentials, stringToSign(path, timestamp), true);
+}
+
+function stringToSign(path, timestamp) {
+    return [
+        label + "-HMAC-SHA256",
+        timestamp,
+        hash(path)
+    ].join("\n");
+}
+
+function canonicalString(path) {
+    if (path !== "/") {
+        path = path.replace(/\/{2,}/g, "/");
+        path = path.split("/").reduce(function(path, piece) {
             if (piece === "..") {
-              path.pop();
+                path.pop();
             } else if (piece !== ".") {
-              path.push(encodeRfc3986(encodeURIComponent(piece)));
+                path.push(encodeRfc3986(encodeURIComponent(piece)));
             }
             return path;
-          }, []).join("/");
-          if (path[0] !== "/") path = "/" + path;
-        }
-        return path;
+        }, []).join("/");
+        if (path[0] !== "/") path = "/" + path;
+    }
+    return path;
+}
+
+function encodeRfc3986(urlEncodedString) {
+    return urlEncodedString.replace(/[!'()*]/g, function(c) {
+        return "%" + c.charCodeAt(0).toString(16).toUpperCase();
+    });
+}
+
+/**
+ *
+ * @param {string} path
+ * @param {string} userId
+ * @param {string} pwdHash
+ * @param {string} timestamp
+ * @returns {Object} {{key: *, hmac: *, timestamp: *, path: (string|*)}}
+ */
+function createRequest(path, userId, pwdHash, timestamp) {
+    if (!isString(path) || isEmpty(path)) {
+        throw new Error("Invalid 'path' parameter specified");
+    }
+    if (!isString(userId) || isEmpty(userId)) {
+        throw new Error("Invalid 'userId' parameter specified");
+    }
+    if (!isString(pwdHash) || isEmpty(pwdHash)) {
+        throw new Error("Invalid 'pwdHash' parameter specified");
+    }
+    if (!isString(timestamp) || isEmpty(timestamp)) {
+        throw new Error("Invalid 'timestamp' parameter specified");
     }
 
-    function encodeRfc3986(urlEncodedString) {
-        return urlEncodedString.replace(/[!'()*]/g, function(c) {
-          return "%" + c.charCodeAt(0).toString(16).toUpperCase();
-        });
-    }
+    var canonicalPath = canonicalString(path);
 
-    return function(path, userId, pwdHash, timestamp) {
-        if (!isString(path) || isEmpty(path)) {
-            throw new Error("Invalid 'path' parameter specified");
-        }
-        if (!isString(userId) || isEmpty(userId)) {
-            throw new Error("Invalid 'userId' parameter specified");
-        }
-        if (!isString(pwdHash) || isEmpty(pwdHash)) {
-            throw new Error("Invalid 'pwdHash' parameter specified");
-        }
-        if (!isString(timestamp) || isEmpty(timestamp)) {
-            throw new Error("Invalid 'timestamp' parameter specified");
-        }
-
-        var canonicalPath = canonicalString(path);
-
-        return {
-            key: userId,
-            hmac: signature(canonicalPath, pwdHash, timestamp),
-            timestamp: timestamp,
-            path: canonicalPath
-        };
+    return {
+        key: userId,
+        hmac: signature(canonicalPath, pwdHash, timestamp),
+        timestamp: timestamp,
+        path: canonicalPath
     };
-});
+}
+
+module.exports = createRequest;
