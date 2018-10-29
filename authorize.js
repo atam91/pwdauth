@@ -24,7 +24,7 @@ const moment = require("moment");
 const authErrors = require("./authErrors");
 
 
-function authorize(loadUser, token) {
+async function authorize(loadUser, token) {
     // check callbacks
     if (!isFunction(loadUser)) {
         return {
@@ -41,7 +41,7 @@ function authorize(loadUser, token) {
     }
 
     // load user
-    var user = loadUser(token.sessionKey);
+    var user = await loadUser(token.sessionKey);
     if (!isObject(user)) {
         return {
             error: authErrors.INVALID_TOKEN_HASH

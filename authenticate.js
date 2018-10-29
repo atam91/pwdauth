@@ -23,7 +23,7 @@ const authErrors = require("./authErrors");
 const stringsEqual = require("./stringsEqual");
 
 
-function authenticate(loadUser, createRequest, createSession, request) {
+async function authenticate(loadUser, createRequest, createSession, request) {
     // check callbacks
     if (!isFunction(loadUser) || !isFunction(createRequest) || !isFunction(createSession)) {
         return {
@@ -52,7 +52,7 @@ function authenticate(loadUser, createRequest, createSession, request) {
     }
 
     // load user
-    var user = loadUser(request.key);
+    var user = await loadUser(request.key);
     if (!isObject(user)) {
         return {
             error: authErrors.USER_NOT_FOUND
