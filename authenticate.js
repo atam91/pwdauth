@@ -79,7 +79,7 @@ async function authenticate(loadUser, createRequest, createSession, request) {
     }
 
     // create session
-    var sessionKey = createSession(user, request);
+    var sessionKey = await createSession(user, request);
     if (!isString(sessionKey) || isEmpty(sessionKey)) {
         return {
             error: authErrors.INVALID_SESSION_KEY,
