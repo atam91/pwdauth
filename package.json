@@ -1,9 +1,17 @@
 {
-  "wilton": {
-    "excludes": [
-      "test.js"
-    ]
+  "name": "pwdauth",
+  "description": "Password authentication and authorization",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "node test.js"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/atam91/pwdauth.git"
+  },
+  "author": "wilton",
+  "license": "Apache",
   "dependencies": {
     "lodash": "^4.17.11",
     "moment": "^2.22.2",
