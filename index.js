@@ -6,9 +6,9 @@ const createRequest = require("./createRequest");
 
 
 module.exports = {
-    authErrors,
-    authenticate,
-    authorize,
-    createPasswordHash,
-    createRequest
+    authErrors: authErrors,
+    authenticate: authenticate,
+    authorize: authorize,
+    createPasswordHash: createPasswordHash,
+    createRequest: createRequest
 };
