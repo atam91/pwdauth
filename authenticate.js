@@ -96,7 +96,8 @@ function authenticate(loadUser, createRequest, createSession, request) {
 
             // return a token
             return {
-                sessionKey: sessionKey
+                sessionKey: sessionKey,
+                user: user
             };
         });
 }
