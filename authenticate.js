@@ -23,7 +23,7 @@ const authErrors = require("./authErrors");
 const stringsEqual = require("./stringsEqual");
 
 
-async function authenticate(loadUser, createRequest, createSession, request) {
+function authenticate(loadUser, createRequest, createSession, request) {
     // check callbacks
     if (!isFunction(loadUser) || !isFunction(createRequest) || !isFunction(createSession)) {
         return {
@@ -52,45 +52,53 @@ async function authenticate(loadUser, createRequest, createSession, request) {
     }
 
     // load user
-    var user = await loadUser(request.key);
-    if (!isObject(user)) {
-        return {
-            error: authErrors.USER_NOT_FOUND
-        };
-    }
-    if (!user.hasOwnProperty("pwdHash") || !isString(user.pwdHash) || isEmpty(user.pwdHash)) {
-        return {
-            error: authErrors.INVALID_USER_LOADED,
-            user: user
-        };
-    }
+    return loadUser(request.key)
+        .then(function (user) {
+            if (!isObject(user)) {
+                return {
+                    error: authErrors.USER_NOT_FOUND
+                };
+            }
+            if (!user.hasOwnProperty("pwdHash") || !isString(user.pwdHash) || isEmpty(user.pwdHash)) {
+                return {
+                    error: authErrors.INVALID_USER_LOADED,
+                    user: user
+                };
+            }
 
-    // re-create request hash and compare it
-    var localRequest = createRequest(
-        request.path,
-        request.key,
-        user.pwdHash,
-        request.timestamp
-    );
-    if (!stringsEqual(localRequest.hmac, request.hmac)) {
-        return {
-            error: authErrors.INVALID_REQUEST_HASH
-        };
-    }
+            // re-create request hash and compare it
+            var localRequest = createRequest(
+                request.path,
+                request.key,
+                user.pwdHash,
+                request.timestamp
+            );
+            if (!stringsEqual(localRequest.hmac, request.hmac)) {
+                return {
+                    error: authErrors.INVALID_REQUEST_HASH
+                };
+            }
 
-    // create session
-    var sessionKey = await createSession(user, request);
-    if (!isString(sessionKey) || isEmpty(sessionKey)) {
-        return {
-            error: authErrors.INVALID_SESSION_KEY,
-            sessionKey: sessionKey
-        };
-    }
+            return createSession(user, request);
+        })
+        .then(function (sessionKeyOrError) {
+            if (sessionKeyOrError && sessionKeyOrError.error) {
+                return sessionKeyOrError;
+            }
 
-    // return a token
-    return {
-        sessionKey: sessionKey
-    };
+            var sessionKey = sessionKeyOrError;
+            if (!isString(sessionKey) || isEmpty(sessionKey)) {
+                return {
+                    error: authErrors.INVALID_SESSION_KEY,
+                    sessionKey: sessionKey
+                };
+            }
+
+            // return a token
+            return {
+                sessionKey: sessionKey
+            };
+        });
 }
 
 module.exports = authenticate;

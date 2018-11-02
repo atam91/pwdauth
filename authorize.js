@@ -24,7 +24,7 @@ const moment = require("moment");
 const authErrors = require("./authErrors");
 
 
-async function authorize(loadUser, token) {
+function authorize(loadUser, token) {
     // check callbacks
     if (!isFunction(loadUser)) {
         return {
@@ -41,33 +41,35 @@ async function authorize(loadUser, token) {
     }
 
     // load user
-    var user = await loadUser(token.sessionKey);
-    if (!isObject(user)) {
-        return {
-            error: authErrors.INVALID_TOKEN_HASH
-        };
-    }
-    if (!user.hasOwnProperty("sessionDurationMinutes") || !isInteger(user.sessionDurationMinutes) ||
-        !user.hasOwnProperty("sessionStartTime") || !isString(user.sessionStartTime) || isEmpty(user.sessionStartTime) ||
-        !user.hasOwnProperty("id") || !isString(user.id) || isEmpty(user.id) ||
-        !user.hasOwnProperty("role") || !isString(user.role) || isEmpty(user.role) ||
-        !user.hasOwnProperty("rights") || !isArray(user.rights)) {
-        return {
-            error: authErrors.INVALID_USER_LOADED,
-            user: user
-        };
-    }
+    return loadUser(token.sessionKey)
+        .then(function (user) {
+            if (!isObject(user)) {
+                return {
+                    error: authErrors.INVALID_TOKEN_HASH
+                };
+            }
+            if (!user.hasOwnProperty("sessionDurationMinutes") || !isInteger(user.sessionDurationMinutes) ||
+                !user.hasOwnProperty("sessionStartTime") || !isString(user.sessionStartTime) || isEmpty(user.sessionStartTime) ||
+                !user.hasOwnProperty("id") || !isString(user.id) || isEmpty(user.id) ||
+                !user.hasOwnProperty("role") || !isString(user.role) || isEmpty(user.role) ||
+                !user.hasOwnProperty("rights") || !isArray(user.rights)) {
+                return {
+                    error: authErrors.INVALID_USER_LOADED,
+                    user: user
+                };
+            }
 
-    // check expiry date
-    var now = moment();
-    var validUntil = moment(user.sessionStartTime).add(user.sessionDurationMinutes, "minutes");
-    if (now.isAfter(validUntil)) {
-        return {
-            error: authErrors.TOKEN_EXPIRED
-        };
-    }
-    // return roles
-    return user;
+            // check expiry date
+            var now = moment();
+            var validUntil = moment(user.sessionStartTime).add(user.sessionDurationMinutes, "minutes");
+            if (now.isAfter(validUntil)) {
+                return {
+                    error: authErrors.TOKEN_EXPIRED
+                };
+            }
+            // return roles
+            return user;
+        });
 }
 
 module.exports = authorize;
