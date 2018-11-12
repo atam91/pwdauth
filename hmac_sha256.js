@@ -62,5 +62,11 @@ function defaultKey(key) {
 module.exports = function(key, data, encoding) {
     var str = defaultString(data);
     var k = defaultKey(key);
-    return hmac(k, str, encoding);
+    var result = hmac(k, str, encoding);
+
+    if (window.debugPwdauth) {
+        console.log('___hmac_sha256', k, str, encoding, '=>', result);
+    }
+
+    return result;
 };

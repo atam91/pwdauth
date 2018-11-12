@@ -50,5 +50,11 @@ function defaultString(str) {
 module.exports = function(data) {
     var str = defaultString(data);
     var bytes = utf8.encode(str);
+    var result = hash(bytes);
+
+    if (window.debugPwdauth) {
+        console.log('___sha256', data, '=>', result);
+    }
+
     return hash(bytes);
 };

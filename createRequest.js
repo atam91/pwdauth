@@ -25,7 +25,20 @@ var label = "PWDAUTH";
 function signature(path, pwdHash, timestamp) {
     var kDate = hmac(label + pwdHash, timestamp);
     var kCredentials = hmac(kDate, label.toLowerCase() + "_request");
-    return hmac(kCredentials, stringToSign(path, timestamp), true);
+    var result = hmac(kCredentials, stringToSign(path, timestamp), true);
+
+    if (window.debugPwdauth) {
+        console.log(
+            '___signature', path, pwdHash, timestamp, '=>',
+            {
+                kDate: kDate,
+                kCredentials: kCredentials,
+                result: result
+            }
+        );
+    }
+
+    return result;
 }
 
 function stringToSign(path, timestamp) {

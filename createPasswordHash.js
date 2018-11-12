@@ -33,8 +33,21 @@ function createPasswordHash(pwdClear, userId) {
     }
     // https://security.stackexchange.com/a/39498/166297
     var salt = hash(userId);
-    var joined = [pwdClear, salt].join("\n");
-    return hash(joined);
+    var joined = [ pwdClear, salt ].join("\n");
+    var result = hash(joined);
+
+    if (window.debugPwdauth) {
+        console.log(
+            '___createPasswordHash', pwdClear, userId, '=>',
+            {
+                salt: salt,
+                joined: joined,
+                result: result
+            }
+        );
+    }
+
+    return result;
 }
 
 
