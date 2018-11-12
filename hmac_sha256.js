@@ -25,8 +25,8 @@ function hmac(key, string, encoding) {
     var result = new sjcl.misc.hmac(key).encrypt(string);
 
     if (window.debugPwdauth) {
-        console.log('___hmac_encrypt', key, string, '=>', result);
-        console.log('___hmac_with_encoding', sjcl.codec.hex.fromBits(result));
+        console.log('__!__hmac_encrypt', key, string, '=>', result);
+        console.log('__!__hmac_encrypt_with_encoding', sjcl.codec.hex.fromBits(result));
     }
 
     if (encoding) {
