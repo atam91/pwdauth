@@ -21,18 +21,15 @@ const sjcl = require("sjcl");
 const utf8 = require("utf8");
 
 
-function hmac(key, string, encoding) {
+function hmac(_key, string) {
+    var key = sjcl.codec.utf8String.toBits(_key);
     var result = new sjcl.misc.hmac(key).encrypt(string);
 
-    if (window.debugPwdauth) {
-        console.log('__!__hmac_encrypt', key, string, '=>', result);
-        console.log('__!__hmac_encrypt_with_encoding', sjcl.codec.hex.fromBits(result));
+    if (window && window.debugPwdauth) {
+        console.log('__!__hmac_encrypt_with_encoding', _key, '=>', sjcl.codec.hex.fromBits(result));
     }
 
-    if (encoding) {
-        result = sjcl.codec.hex.fromBits(result);
-    }
-    return result;
+    return sjcl.codec.hex.fromBits(result);
 }
 
 function defaultString(str) {
@@ -70,7 +67,7 @@ module.exports = function(key, data, encoding) {
     var k = defaultKey(key);
     var result = hmac(k, str, encoding);
 
-    if (window.debugPwdauth) {
+    if (window && window.debugPwdauth) {
         console.log('___hmac_sha256', k, str, encoding, '=>', result);
     }
 

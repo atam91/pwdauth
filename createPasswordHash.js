@@ -36,7 +36,7 @@ function createPasswordHash(pwdClear, userId) {
     var joined = [ pwdClear, salt ].join("\n");
     var result = hash(joined);
 
-    if (window.debugPwdauth) {
+    if (window && window.debugPwdauth) {
         console.log(
             '___createPasswordHash', pwdClear, userId, '=>',
             {

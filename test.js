@@ -29,6 +29,7 @@ const createPasswordHash = require("./createPasswordHash");
 const createRequest = require("./createRequest");
 
 
+window = { debugPwdauth: false };
 console.log("test: pwdauth");
 
 // prepare env
@@ -46,23 +47,33 @@ var userInDB = {
 };
 
 function createSession(user, request) {
-    userInDB.sessionKey = nanoid();
-    userInDB.sessionStartTime = moment().format();
-    return userInDB.sessionKey;
+    return new Promise(resolve => {
+        userInDB.sessionKey = nanoid();
+        userInDB.sessionStartTime = moment().format();
+
+        return resolve({
+            sessionKey: userInDB.sessionKey,
+            user: user
+        });
+    });
 }
 
 function loadUserById(userId) {
-    if (userInDB.id === userId){
-        return userInDB;
-    }
-    return null;
+    return new Promise(resolve => {
+        if (userInDB.id === userId){
+            return resolve(userInDB);
+        }
+        return resolve(null);
+    });
 }
 
 function loadUserBySessionKey(sessionKey) {
-    if (userInDB.sessionKey === sessionKey){
-        return userInDB;
-    }
-    return null;
+    return new Promise(resolve => {
+        if (userInDB.sessionKey === sessionKey) {
+            return resolve(userInDB);
+        }
+        return resolve(null);
+    });
 }
 // DB access logic or cache lookup ends here
 
@@ -75,68 +86,77 @@ function myAuthorize(token) {
 }
 
 
-// test success
+async function main() {
+    // process user input
+    var userId = "login1";
+    var pwdClear = "password1";
+    var pwdHash = createPasswordHash(pwdClear, userId);
+    ////console.log('___pwdHash', pwdHash);
 
-// process user input
-var userId = "login1";
-var pwdClear = "password1";
-var pwdHash = createPasswordHash(pwdClear, userId);
-var timestamp = moment();
-var tokenRequest = createRequest(
-    "/auth1",
-    userId,
-    pwdHash,
-    timestamp.format()
-);
+    var timestamp = moment();
+    var tokenRequest = createRequest(
+        "/auth1",
+        userId,
+        pwdHash,
+        timestamp.format()
+    );
+    ////console.log('___tokenRequest', tokenRequest);
 // obtain token
-var token = myAuthenticate(tokenRequest);
+    var token = await myAuthenticate(tokenRequest);
 
-assert(isObject(token));
-assert(isNil(token.error));
+    ///console.log(token)
+
+    assert(isObject(token));
+    assert(isNil(token.error));
 
 // get roles
-var user = myAuthorize(token);
+    var user = await myAuthorize(token);
 
-assert(isString(user.id));
-assert(isString(user.role));
-assert(isArray(user.rights));
-assert(isNil(user.error));
-assert.equal(user.rights.length, 2);
+    assert(isString(user.id));
+    assert.equal(user.id, 'login1');
+    assert(isString(user.role));
+    assert(isArray(user.rights));
+    assert(isNil(user.error));
+    assert.equal(user.rights.length, 2);
 
 
 // test authenticate error messages
 
-assert.equal(authenticate({foo: "bar"}).error, authErrors.INVALID_CALLBACK);
-assert.equal(myAuthenticate(null).error, authErrors.REQUEST_NOT_WELL_FORMED);
-assert.equal(myAuthenticate("foo").error, authErrors.REQUEST_NOT_WELL_FORMED);
-assert.equal(myAuthenticate({foo: "bar"}).error, authErrors.REQUEST_NOT_WELL_FORMED);
-assert.equal(myAuthenticate({
-    path: "/auth1",
-    key: userId,
-    timestamp: timestamp.format("MM.DD.YYYY"),
-    hmac: "..."
-}).error, authErrors.INVALID_DATE_FORMAT);
-assert.equal(myAuthenticate({
-    path: "/auth2",
-    key: "foo1",
-    timestamp: timestamp.format(),
-    hmac: "..."
-}).error, authErrors.USER_NOT_FOUND);
-assert.equal(myAuthenticate({
-    path: "/auth2",
-    key: userId,
-    timestamp: timestamp.format(),
-    hmac: "..."
-}).error, authErrors.INVALID_REQUEST_HASH);
+
+    assert.deepEqual(await authenticate({foo: "bar"}), { error: authErrors.INVALID_CALLBACK });
+    assert.deepEqual(await myAuthenticate(null), { error: authErrors.REQUEST_NOT_WELL_FORMED });
+    assert.deepEqual(await myAuthenticate("foo"), { error: authErrors.REQUEST_NOT_WELL_FORMED });
+    assert.deepEqual(await myAuthenticate({foo: "bar"}), { error: authErrors.REQUEST_NOT_WELL_FORMED });
+    assert.deepEqual(await myAuthenticate({
+        path: "/auth1",
+        key: userId,
+        timestamp: timestamp.format("MM.DD.YYYY"),
+        hmac: "..."
+    }), { error: authErrors.INVALID_DATE_FORMAT });
+    assert.deepEqual(await myAuthenticate({
+        path: "/auth2",
+        key: "foo1",
+        timestamp: timestamp.format(),
+        hmac: "..."
+    }), { error: authErrors.INVALID_SESSION_KEY });
+    assert.deepEqual(await myAuthenticate({
+        path: "/auth2",
+        key: userId,
+        timestamp: timestamp.format(),
+        hmac: "..."
+    }), { error: authErrors.INVALID_SESSION_KEY });
 
 
 // test authorize error messages
 
-assert.equal(authorize({foo: "bar"}).error, authErrors.INVALID_CALLBACK);
-assert.equal(myAuthorize(null).error, authErrors.TOKEN_NOT_WELL_FORMED);
-assert.equal(myAuthorize({foo: "bar"}).error, authErrors.TOKEN_NOT_WELL_FORMED);
-assert.equal(myAuthorize({sessionKey: "foo"}).error, authErrors.INVALID_TOKEN_HASH);
-userInDB.sessionStartTime = moment().add(-40, "minutes").format();
-assert.equal(myAuthorize(token).error, authErrors.TOKEN_EXPIRED);
+    assert.deepEqual(await authorize({foo: "bar"}), { error: authErrors.INVALID_CALLBACK });
+    assert.deepEqual(await myAuthorize(null), { error: authErrors.TOKEN_NOT_WELL_FORMED });
+    assert.deepEqual(await myAuthorize({foo: "bar"}), { error: authErrors.TOKEN_NOT_WELL_FORMED });
+    assert.deepEqual(await myAuthorize({sessionKey: "foo"}), { error: authErrors.INVALID_TOKEN_HASH });
+    userInDB.sessionStartTime = moment().add(-40, "minutes").format();
+    assert.deepEqual(await myAuthorize(token), { error: authErrors.TOKEN_EXPIRED });
+}
 
-console.log('test success!');
+
+main()
+    .then(() => { console.log('test success!'); });

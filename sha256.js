@@ -52,7 +52,7 @@ module.exports = function(data) {
     var bytes = utf8.encode(str);
     var result = hash(bytes);
 
-    if (window.debugPwdauth) {
+    if (window && window.debugPwdauth) {
         console.log('___sha256', data, '=>', result);
     }
 

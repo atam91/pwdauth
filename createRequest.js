@@ -27,7 +27,7 @@ function signature(path, pwdHash, timestamp) {
     var kCredentials = hmac(kDate, label.toLowerCase() + "_request");
     var result = hmac(kCredentials, stringToSign(path, timestamp), true);
 
-    if (window.debugPwdauth) {
+    if (window && window.debugPwdauth) {
         console.log(
             '___signature', path, pwdHash, timestamp, '=>',
             {

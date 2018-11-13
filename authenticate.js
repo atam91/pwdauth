@@ -26,9 +26,9 @@ const stringsEqual = require("./stringsEqual");
 function authenticate(loadUser, createRequest, createSession, request) {
     // check callbacks
     if (!isFunction(loadUser) || !isFunction(createRequest) || !isFunction(createSession)) {
-        return {
+        return Promise.resolve({
             error: authErrors.INVALID_CALLBACK
-        };
+        });
     }
 
     // check request well-formed
@@ -38,17 +38,17 @@ function authenticate(loadUser, createRequest, createSession, request) {
         !request.hasOwnProperty("timestamp") || !isString(request.timestamp) || isEmpty(request.timestamp) ||
         !request.hasOwnProperty("path") || !isString(request.path) || isEmpty(request.path)
     ){
-        return {
+        return Promise.resolve({
             error: authErrors.REQUEST_NOT_WELL_FORMED
-        };
+        });
     }
 
     // check ISO 8601 date format
     var reqDate = moment(request.timestamp, moment.ISO_8601, true);
     if (!reqDate.isValid()) {
-        return {
+        return Promise.resolve({
             error: authErrors.INVALID_DATE_FORMAT
-        };
+        });
     }
 
     // load user
@@ -81,7 +81,8 @@ function authenticate(loadUser, createRequest, createSession, request) {
 
             return createSession(user, request);
         })
-        .then(function (sessionKeyOrError) {
+        .then(function (data) {
+            var sessionKeyOrError = data.sessionKey;
             if (sessionKeyOrError && sessionKeyOrError.error) {
                 return sessionKeyOrError;
             }
@@ -90,14 +91,13 @@ function authenticate(loadUser, createRequest, createSession, request) {
             if (!isString(sessionKey) || isEmpty(sessionKey)) {
                 return {
                     error: authErrors.INVALID_SESSION_KEY,
-                    sessionKey: sessionKey
                 };
             }
 
             // return a token
             return {
                 sessionKey: sessionKey,
-                user: user
+                user: data.user
             };
         });
 }

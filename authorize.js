@@ -27,17 +27,17 @@ const authErrors = require("./authErrors");
 function authorize(loadUser, token) {
     // check callbacks
     if (!isFunction(loadUser)) {
-        return {
+        return Promise.resolve({
             error: authErrors.INVALID_CALLBACK
-        };
+        });
     }
 
     // check token well-formed
     if (!isObject(token) ||
         !token.hasOwnProperty("sessionKey") || !isString(token.sessionKey) || isEmpty(token.sessionKey)) {
-        return {
+        return Promise.resolve({
             error: authErrors.TOKEN_NOT_WELL_FORMED
-        };
+        });
     }
 
     // load user
