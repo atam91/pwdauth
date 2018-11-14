@@ -30,6 +30,7 @@ const createRequest = require("./createRequest");
 
 
 window = { debugPwdauth: false };
+const DEBUG_TEST = true;
 console.log("test: pwdauth");
 
 // prepare env
@@ -91,7 +92,7 @@ async function main() {
     var userId = "login1";
     var pwdClear = "password1";
     var pwdHash = createPasswordHash(pwdClear, userId);
-    ////console.log('___pwdHash', pwdHash);
+    DEBUG_TEST && console.log('___pwdHash', pwdHash);
 
     var timestamp = moment();
     var tokenRequest = createRequest(
@@ -100,7 +101,7 @@ async function main() {
         pwdHash,
         timestamp.format()
     );
-    ////console.log('___tokenRequest', tokenRequest);
+    DEBUG_TEST && console.log('___tokenRequest', tokenRequest);
 // obtain token
     var token = await myAuthenticate(tokenRequest);
 
